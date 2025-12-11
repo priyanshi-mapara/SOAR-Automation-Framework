@@ -53,19 +53,27 @@ utils/
    python main.py --playbook configs/playbooks/phishing_triage.yml
    ```
    By default, `main.py` runs the phishing triage playbook.
-3. **Start the API + UI server**:
+3. **Build the React UI (production)**:
+   ```bash
+   cd ui
+   npm install
+   npm run build
+   ```
+   - Production assets land in `ui/dist` (Vite default). You can run the backend without this folder; it will log a warning and serve only the API until you build the UI.
+4. **Start the API + UI server**:
    ```bash
    python run_server.py
    ```
-   - API served on `http://localhost:8000`.
-   - If you build the React UI (`npm install && npm run build` in `ui/`), it will be served from the same origin.
-4. **Run the React dashboard (development mode)**:
+   - API served on `http://localhost:8000` (OpenAPI docs at `/docs`).
+   - When `ui/dist` exists, the React dashboard is automatically served at the root path.
+5. **Run the React dashboard (development mode)**:
    ```bash
    cd ui
    npm install
    npm run dev -- --host
    ```
-   Set `VITE_API_URL=http://localhost:8000` to point the UI at a different API host if needed.
+   - Set `VITE_API_URL=http://localhost:8000` to point the UI at the FastAPI server during local development.
+   - Visit the dev server URL (typically `http://localhost:5173`) while the backend is running for live reloading.
 
 ## How It Works
 1. **Loader** discovers available actions/conditions/triggers using `pkgutil` and `importlib` and maps their `type` identifiers to classes.
@@ -132,7 +140,14 @@ The UI (in `ui/`) offers:
 - Live log viewer backed by WebSockets and an execution history table.
 - Trigger monitor with enable/disable controls and last-run timestamps.
 
-Build artifacts from `npm run build` are automatically served by the FastAPI app when placed in `ui/build`.
+Build artifacts from `npm run build` are emitted into `ui/dist` and automatically served by the FastAPI app when present.
+
+### Validation checklist
+- `GET /` loads the React dashboard (served from `ui/dist`).
+- `GET /docs` loads the FastAPI OpenAPI documentation.
+- `GET /playbooks` returns the available playbooks.
+- WebSocket connections (e.g., `ws://localhost:8000/logs/stream/{run_id}`) still stream logs.
+- `npm run dev -- --host` in `ui/` runs the React app against the API for local development.
 
 ## Extending the Framework
 1. **Add a new action**
