@@ -1,0 +1,32 @@
+{
+  "name": "Phishing Triage",
+  "trigger": "event",
+  "conditions": [
+    {
+      "type": "equals",
+      "field": "email.sender_domain",
+      "value": "suspicious.com"
+    },
+    {
+      "type": "greater_than",
+      "field": "severity",
+      "value": 5
+    }
+  ],
+  "actions": [
+    {
+      "type": "enrich_ip",
+      "field": "email.sender_ip"
+    },
+    {
+      "type": "create_ticket",
+      "priority": "High",
+      "summary": "Automated phishing triage ticket"
+    },
+    {
+      "type": "send_email",
+      "recipient": "soc@example.com",
+      "subject": "Phishing case opened"
+    }
+  ]
+}
