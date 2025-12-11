@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.db
+*.log
+node_modules/
+ui/dist/
+ui/build/
+.env
