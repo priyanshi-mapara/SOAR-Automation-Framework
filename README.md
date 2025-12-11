@@ -1,6 +1,6 @@
 # SOAR Automation Framework
 
-A modular Security Orchestration, Automation, and Response (SOAR) framework built in Python. Playbooks are defined in YAML (JSON-compatible) and executed dynamically with discoverable triggers, conditions, and actions—mirroring how platforms like Cortex XSOAR, Swimlane, or Splunk SOAR orchestrate automation.
+A modular Security Orchestration, Automation, and Response (SOAR) framework built in Python. Playbooks are defined in YAML (JSON-compatible) and executed dynamically with discoverable triggers, conditions, and actions—mirroring how platforms like Cortex XSOAR, Swimlane, or Splunk SOAR orchestrate automation. The framework now ships with a FastAPI-powered REST layer and a modern React dashboard for visual management.
 
 ## Features
 - **Dynamic discovery** of actions, conditions, and triggers via reflection (no hardcoded imports).
@@ -9,6 +9,8 @@ A modular Security Orchestration, Automation, and Response (SOAR) framework buil
 - **Validation** to catch malformed playbooks before execution.
 - **Extensible architecture** using base `Action`, `Condition`, and `Trigger` classes.
 - **PyYAML optional**: falls back to JSON parsing if PyYAML is unavailable (playbooks in this repo are JSON-compatible YAML for portability).
+- **FastAPI REST API** that exposes playbook CRUD, execution history, triggers, and live log streaming.
+- **React dashboard** with live log viewer, trigger monitor, playbook browser, and execution history table.
 
 ## Project Layout
 ```
@@ -42,15 +44,28 @@ utils/
 ```
 
 ## Getting Started
-1. **Install dependencies**: The framework uses only the Python standard library. For richer YAML support, install `PyYAML` (optional):
+1. **Install dependencies**: The framework now includes a lightweight API/UI layer:
    ```bash
-   pip install pyyaml
+   pip install fastapi uvicorn "pydantic>=2" pyyaml
    ```
-2. **Run a playbook**:
+2. **Run a playbook (CLI unchanged)**:
    ```bash
    python main.py --playbook configs/playbooks/phishing_triage.yml
    ```
    By default, `main.py` runs the phishing triage playbook.
+3. **Start the API + UI server**:
+   ```bash
+   python run_server.py
+   ```
+   - API served on `http://localhost:8000`.
+   - If you build the React UI (`npm install && npm run build` in `ui/`), it will be served from the same origin.
+4. **Run the React dashboard (development mode)**:
+   ```bash
+   cd ui
+   npm install
+   npm run dev -- --host
+   ```
+   Set `VITE_API_URL=http://localhost:8000` to point the UI at a different API host if needed.
 
 ## How It Works
 1. **Loader** discovers available actions/conditions/triggers using `pkgutil` and `importlib` and maps their `type` identifiers to classes.
@@ -93,6 +108,31 @@ Playbooks live under `configs/playbooks/`. Example (Phishing Triage):
 ### Included Playbooks
 - **phishing_triage.yml**: Event-based flow that enriches sender IPs, creates a ticket, and sends an SOC notification.
 - **iam_review.yml**: Scheduled flow that runs every second (twice by default) and notifies the identity team.
+
+## REST API
+
+Key endpoints (see `api/routes/` for full definitions):
+
+- `GET /playbooks` — list available playbooks.
+- `GET /playbooks/{name}` — retrieve the parsed YAML content.
+- `POST /playbooks/run/{name}` — start an asynchronous execution run.
+- `POST /playbooks/upload` — upload a new YAML file.
+- `PUT /playbooks/{name}` / `DELETE /playbooks/{name}` — manage playbooks.
+- `GET /runs` / `GET /runs/{id}` — execution history and log retrieval.
+- `WEBSOCKET /logs/stream/{id}` — live log streaming per run.
+- `GET /triggers` and `POST /triggers/(enable|disable)/{name}` — monitor trigger readiness.
+
+Execution metadata and logs are stored in a lightweight SQLite database under `data/soar.db`.
+
+## React Dashboard
+
+The UI (in `ui/`) offers:
+- Playbook browser with trigger badges and quick actions (run/view/delete).
+- Detail view that surfaces trigger, conditions, and actions alongside the YAML content.
+- Live log viewer backed by WebSockets and an execution history table.
+- Trigger monitor with enable/disable controls and last-run timestamps.
+
+Build artifacts from `npm run build` are automatically served by the FastAPI app when placed in `ui/build`.
 
 ## Extending the Framework
 1. **Add a new action**
