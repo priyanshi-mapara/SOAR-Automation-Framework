@@ -1,0 +1,27 @@
+{
+  "name": "IAM Review",
+  "trigger": {
+    "type": "schedule",
+    "interval": 1,
+    "runs": 2
+  },
+  "conditions": [
+    {
+      "type": "contains",
+      "field": "system.action",
+      "value": "iam_review"
+    }
+  ],
+  "actions": [
+    {
+      "type": "create_ticket",
+      "priority": "Medium",
+      "summary": "IAM review scheduled task"
+    },
+    {
+      "type": "send_email",
+      "recipient": "identity-team@example.com",
+      "subject": "IAM review completed"
+    }
+  ]
+}
